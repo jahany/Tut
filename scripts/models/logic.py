@@ -8,8 +8,9 @@ class GetTimeOnline(QThread):
 
     _response: Response
     _statuscode: int
-    time_zone: str = 'Asia/Tehran'
-    _jsonfile: json
+    _content: str
+    _date: str
+    _gmttime: str
     _hour: int = 0
     _minute: int = 0
     _seconds: int = 0
@@ -45,33 +46,31 @@ class GetTimeOnline(QThread):
 
     secondsProperty = Property(int, getSeconds, setSeconds, notify=changed)
 
-    def __init__(self, time_zone: str ='Asia/Tehran'):
+    def __init__(self):
         super().__init__()
-        self.time_zone = time_zone
         self.timer = QTimer()
-        self.timer.timeout.connect(self.get_time)
+        self.timer.timeout.connect(self.Iran_time)
         self.timer.start(1000)
 
     def run(self):
         # override
         while 1:
-            self.get_time()
+            self.Iran_time()
+            print(self.Iran_time())
+
     @Slot(int)
     def get_time(self):
         try:
-            self._response = get(url=f"https://timeapi.io/api/Time/current/zone?timeZone={self.time_zone}",
-                                 headers={"Content-Type":"application/json"},
+            self._response = get(url="https://basket.irannk.com/Basket/getDateTime",
+                                 headers={"Content-Type": "application/json"},
                                  params={'q': 'requests+language:python'})
             self._statuscode = self._response.status_code
 
             if self._statuscode == 200:
-                self._jsonfile = self._response.json()
-                self.setHour(self._jsonfile['hour'])
-                self.setMinutes(self._jsonfile['minute'])
-                self.setSeconds(self._jsonfile['seconds'])
-                print(f"{self._hour} : {self._minute} : {self._seconds}")
-                print(self.getSeconds())
-                self.secondsProperty
+                self._content = self._response.content.decode()
+                self._date = self._content.split(" ")[0]
+                self._gmttime = self._content.split(" ")[1]
+                return self._gmttime
 
             else:
                 print("Not Found!")
@@ -83,4 +82,22 @@ class GetTimeOnline(QThread):
         except Exception as e:
             print(f"An error occured: {e}")
 
+    def time_to_seconds(self, stringtime):
+        hour, minute, second = map(int, stringtime.split(":"))
+        return hour * 60 * 60 + minute * 60 + second
 
+    def seconds_to_time(self,timeseconds):
+        """Turn seconds into hh:mm:ss"""
+        self._hour = timeseconds // (60 * 60)
+        self.setHour(self._hour)
+        timeseconds %= (60 * 60) * self._hour
+        self._minute = timeseconds // 60
+        self.setMinutes(self._minute)
+        timeseconds %= 60 * self._minute
+        self._seconds = timeseconds
+        self.setSeconds(self._seconds)
+        return "%02d:%02d:%02d" % (self._hour, self._minute, self._seconds)
+
+    def Iran_time(self):
+        gmt_time = self.get_time()
+        return self.seconds_to_time(self.time_to_seconds(gmt_time) + self.time_to_seconds("03:30:00"))
