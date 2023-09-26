@@ -1,0 +1,19 @@
+{
+    "files": [
+        "MyText.qml",
+        "main.py",
+        "main.qml",
+        "translations_en.qm",
+        "translations_en.qm",
+        "translations_en.ts",
+        "translations_en.ts",
+        "translations_es.qm",
+        "translations_es.qm",
+        "translations_es.ts",
+        "translations_es.ts",
+        "translations_fa.qm",
+        "translations_fa.qm",
+        "translations_fa.ts",
+        "translations_fa.ts"
+    ]
+}
